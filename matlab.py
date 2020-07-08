@@ -337,5 +337,5 @@ def latex_table(solution):
     '''
 
     import pandas as pd
-    parameters_df = pd.DataFrame(data=[self.paramsdic]).T
+    parameters_df = pd.DataFrame(data=[solution.paramsdic]).T
     print(parameters_df.to_latex())
