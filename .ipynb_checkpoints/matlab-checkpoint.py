@@ -31,7 +31,6 @@ class Solution:
             widthP: Perovskite width
             stages: Number of stages in voltage program
             stage: list of integers used to slice data into stages
-            paramsdic: dictionary of simulation parameter labels and values
             nm2m: conversion parameter between nm^-3 and m^-3
             revXXX: data from reverse sweep
             fwdXXX: data from forward sweep
@@ -61,7 +60,6 @@ class Solution:
         self.widthP = self.params['b'][0][0][0]*1e9
         self.stages = int((len(self.params['applied_voltage'][0][0])-1)/3)
         self.stage = [i*self.SPLIT_JV for i in range(self.stages+1)]
-        self.paramsdic = {l:v.flatten() for l, v in zip(self.params[0].dtype.names, self.params[0])}
 
         # Conversion parameter
         self.nm2m = 1e27
@@ -327,15 +325,3 @@ def plot_zoomed_anionvacancies(solution, transportlayer, save=False, zoom=125):
             fig.savefig(f'ETL_anion_vac_dstrbn_{solution.label}.png', dpi = 400)
         elif transportlayer == 'H':
             fig.savefig(f'HTL_anion_vac_dstrbn_{solution.label}.png', dpi = 400)
-
-
-
-def latex_table(solution):
-
-    '''
-    Function to print simulation parameters in LaTeX table format. Imports pandas.
-    '''
-
-    import pandas as pd
-    parameters_df = pd.DataFrame(data=[self.paramsdic]).T
-    print(parameters_df.to_latex())
