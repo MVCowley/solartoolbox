@@ -44,6 +44,9 @@ class Solution:
             xxxH: data from HTL
             xxxP: data from perovskite layer
             DATAx: spatial data
+            xxxy: y data for np.trapz calculation
+            xxxarea: area under xxx curve given by np.trapz
+            degreehyst: degree of hysteresis in simulation
 
         """
 
@@ -71,21 +74,21 @@ class Solution:
         self.revvdat = self.v[self.stage[-3]:self.stage[-2]]
 
         self.revj0 = min(self.revjdat, key=lambda x:abs(x-0))
-        self.RevVoc = np.where(self.revjdat == self.revj0)[0][0]
+        self.RevVoc = np.where(self.revjdat == self.revj0)[0][0] + self.stage[-3]
 
         self.fwdjdat = self.j[self.stage[-2]:self.stage[-1]]
         self.fwdvdat = self.v[self.stage[-2]:self.stage[-1]]
 
         self.fwdj0 = min(self.fwdjdat, key=lambda x:abs(x-0))
-        self.FwdVoc = np.where(self.fwdjdat == self.fwdj0)[0][0]
+        self.FwdVoc = np.where(self.fwdjdat == self.fwdj0)[0][0] + self.stage[-2]
 
         self.Jsc = self.stage[-2]
 
         self.revpwdat = np.multiply(self.revjdat, self.revvdat)
-        self.RevMpp = np.where(self.revpwdat == np.amax(self.revpwdat))[0][0]
+        self.RevMpp = np.where(self.revpwdat == np.amax(self.revpwdat))[0][0] + self.stage[-3]
 
         self.fwdpwdat = np.multiply(self.fwdjdat, self.fwdvdat)
-        self.FwdMpp = np.where(self.fwdpwdat == np.amax(self.fwdpwdat))[0][0]
+        self.FwdMpp = np.where(self.fwdpwdat == np.amax(self.fwdpwdat))[0][0] + self.stage[-2]
 
         self.keyval = [self.RevVoc, self.RevMpp, self.Jsc, self.FwdMpp, self.FwdVoc]
 
@@ -124,6 +127,18 @@ class Solution:
 
         # Ion vacancy x data
         self.ionvx = self.nxP
+
+        # Degree of hysteresis calculation
+        self.revy = self.j[self.RevVoc:self.Jsc+1]
+        self.revarea = np.trapz(self.revy, dx = np.diff(-self.revvdat)[0])
+
+        self.fwdy = self.j[self.Jsc:self.FwdVoc+1]
+        self.fwdarea = np.trapz(self.fwdy, dx = np.diff(self.fwdvdat)[0])
+
+        self.degreehyst = ((self.revarea - self.fwdarea) / self.revarea) * 100
+    
+
+
 
 def plot_electronsholes(solution, save=False):
 
