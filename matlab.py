@@ -14,22 +14,22 @@ class Solution:
 
         Arguments:
 
-            data_location: Location of batch results file
-            sol_number: number of solution files in batch file
+            data_location: location of batch results file
+            sol_number: index of solution file in batch file to access
 
         Attributes:
 
             SPLIT_JV: number of temporal grid points in each stage of the simulation voltage program
-            raw: Data in scipy.io.loadmat imported format
-            label: Variable from batch run
-            dat: Solution file
-            dstrbns: Distribution data
-            vectors: Space data
-            params: Simulation parameters
-            j: Current density data
-            v: Voltage data
-            widthP: Perovskite width
-            stages: Number of stages in voltage program
+            raw: data in scipy.io.loadmat imported format
+            label: variable from batch run
+            dat: solution file
+            dstrbns: distribution data
+            vectors: space data
+            params: simulation parameters
+            j: current density data
+            v: voltage data
+            widthP: perovskite width
+            stages: number of stages in voltage program
             stage: list of integers used to slice data into stages
             paramsdic: dictionary of simulation parameter labels and values
             nm2m: conversion parameter between nm^-3 and m^-3
@@ -136,7 +136,7 @@ class Solution:
         self.fwdarea = np.trapz(self.fwdy, dx = np.diff(self.fwdvdat)[0])
 
         self.degreehyst = ((self.revarea - self.fwdarea) / self.revarea) * 100
-    
+
 
 
 
