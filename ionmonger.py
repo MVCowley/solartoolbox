@@ -82,7 +82,7 @@ class Solution:
         self.fwdj0 = min(self.fwdjdat, key=lambda x:abs(x-0))
         self.FwdVoc = np.where(self.fwdjdat == self.fwdj0)[0][0] + self.stage[-2]
 
-        self.Jsc = np.where(min(self.v) == self.v)
+        self.Jsc = np.where(min(self.v) == self.v)[0][0]
 
         self.revpwdat = np.multiply(self.revjdat, self.revvdat)
         self.RevMpp = np.where(self.revpwdat == np.amax(self.revpwdat))[0][0] + self.stage[-3]
