@@ -354,3 +354,132 @@ def latex_table(solution):
     import pandas as pd
     parameters_df = pd.DataFrame(data=[solution.paramsdic]).T
     print(parameters_df.to_latex())
+
+def plot_degree_of_hysteresis(solution_batch, precondition, title, save=False):
+    scan_rate = [precondition/i.label for i in solution_batch]
+    degreehyst = [i.degreehyst for i in solution_batch]
+
+    fig, ax = plt.subplots()
+
+    ax.plot(scan_rate, degreehyst, marker='o', markersize=3)
+    ax.set_xscale('log')
+    ax.set_xlabel('Scan rate mV (s$^{-1}$)')
+    ax.set_ylabel('Degree of hysteresis (%)')
+    ax.set_title(f'Degree of hysteresis vs scan rate for {title}')
+
+    # Save file:
+    if save == True:
+        fig.savefig(f'hysteresis_scan_rate_{title}.png', dpi = 400)
+
+def plot_electric_force_scan_rate(solution_batch, label_modifier, point_of_interest, title, save=False):
+    electric_force = [-(np.diff(i.phiP)/1e6)/(i.vectors['dx'][0].flatten()*i.widthP/1e9) for i in solution_batch]
+    scan_rate = [label_modifier/i.label for i in solution_batch]
+
+    revvoc = []
+    revmpp = []
+    jsc = []
+    fwdmpp = []
+    fwdvoc = []
+    middle_force = [revvoc, revmpp, jsc, fwdmpp, fwdvoc]
+
+    for solution_array in electric_force:
+        revvoc.append(solution_array[0][point_of_interest])
+        revmpp.append(solution_array[1][point_of_interest])
+        jsc.append(solution_array[2][point_of_interest])
+        fwdmpp.append(solution_array[3][point_of_interest])
+        fwdvoc.append(solution_array[4][point_of_interest])
+
+    lgndkeyval = ['RevVoc', 'RevMpp', 'Jsc', 'FwdMpp', 'FwdVoc']
+
+    fig, ax = plt.subplots()
+
+    for i, j in zip(middle_force, lgndkeyval):
+        ax.plot(scan_rate, i, marker='o', markersize=3, label=j)
+
+    ax.legend()
+    ax.set_xscale('log')
+    ax.set_ylabel('Electric field (MV m$^{-1}$)')
+    ax.set_xlabel('Scan rate (mV s$^{-1}$)')
+    ax.set_title(f'Electric force vs scan rate for {title} at {point_of_interest}')
+
+    # Save file:
+    if save == True:
+        fig.savefig(f'electric_force_scan_rate_{title}_{point_of_interest}.png', dpi = 400)
+
+def intrinsic_carriers(solution):
+
+    nc = solution.paramsdic['gc']
+    nv = solution.paramsdic['gv']
+    ec = solution.paramsdic['Ec']
+    ev = solution.paramsdic['Ev']
+    kb = solution.paramsdic['kB']
+    T = solution.paramsdic['T']
+
+    i = np.sqrt(nc*nv*np.exp(-(ec-ev)/(kb*T)))
+    return i
+
+def srh_recombination_rate(solution):
+
+    steps = len(solution.dstrbns['n'][0])
+
+    electrons = [solution.dstrbns['n'][0][i,:]*solution.nm2m for i in range(1, steps)]
+    holes = [solution.dstrbns['p'][0][i,:]*solution.nm2m for i in range(1, steps)]
+
+    i = intrinsic_carriers(solution)
+    t_n = solution.paramsdic['tn']
+    t_p = solution.paramsdic['tp']
+
+    srh = [(n*p-i**2)/(t_n*p + t_p*n + (t_n + t_p)*i) for n, p in zip(electrons, holes)]
+    return srh
+
+def plot_srh_scan_rate(batch_solution, label_modifier, point_of_interest, title, save=False):
+    scan_rate = [label_modifier/i.label for i in batch_solution]
+    srh = [srh_recombination_rate(i) for i in batch_solution]
+
+    revvoc = []
+    revmpp = []
+    jsc = []
+    fwdmpp = []
+    fwdvoc = []
+    middle_srh= [revvoc, revmpp, jsc, fwdmpp, fwdvoc]
+
+    for index, solution_array in enumerate(srh):
+        revvoc.append(solution_array[batch_solution[index].keyval[0]][point_of_interest])
+        revmpp.append(solution_array[batch_solution[index].keyval[1]][point_of_interest])
+        jsc.append(solution_array[batch_solution[index].keyval[2]][point_of_interest])
+        fwdmpp.append(solution_array[batch_solution[index].keyval[3]][point_of_interest])
+        fwdvoc.append(solution_array[batch_solution[index].keyval[4]][point_of_interest])
+
+    lgndkeyval = ['RevVoc', 'RevMpp', 'Jsc', 'FwdMpp', 'FwdVoc']
+
+    fig, ax = plt.subplots()
+
+    for i, j in zip(middle_srh, lgndkeyval):
+        ax.plot(scan_rate, i, marker='o', markersize=3, label=j)
+
+    ax.legend()
+    ax.set_xscale('log')
+    ax.set_xlabel('Scan rate (mV s$^{-1}$)')
+    ax.set_yscale('log')
+    ax.set_ylabel('SRH recombination (m$^{-3}$ s$^{-2}$)')
+    ax.set_title(f'SRH recombination vs scan rate for {title} at {point_of_interest}')
+
+    # Save file:
+    if save == True:
+        fig.savefig(f'srh_recombination_scan_rate_{title}_{point_of_interest}.png', dpi = 400)
+
+def plot_jv_curve(solution, precondition, save=False):
+
+    fig, ax = plt.subplots()
+
+    ax.plot(solution.v[solution.RevVoc:solution.Jsc+1], solution.j[solution.RevVoc:solution.Jsc+1], label='Rev', color='C0', linestyle='-')
+    ax.plot(solution.v[solution.Jsc:solution.FwdVoc+1], solution.j[solution.Jsc:solution.FwdVoc+1], label='Fwd', color='C1', linestyle='--')
+
+    ax.legend()
+    ax.set_ylabel('Current density (mA cm$^{-2}$)')
+    ax.set_xlabel('Voltage (V)')
+    ax.set_title(f'jV curve for {precondition/solution.label}' + 'mV s$^{-1}$')
+
+    # Save file:
+    if save == True:
+        fig.savefig(f'jv_{precondition/solution.label}.png', dpi = 400)
