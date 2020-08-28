@@ -523,3 +523,52 @@ def plot_jv_curve(solution, precondition, save=False, setax=False):
     # Save file:
     if save == True:
         fig.savefig(f'jv_{precondition/solution.label}.png', dpi = 400)
+
+def plot_currents(solution_batch, label_modifier, title, save=False, setax=False):
+    j_rev = [solution_batch[i].j[solution_batch[i].RevMpp] for i in range(50)]
+    jl_rev = [-solution_batch[i].dat['Jl'].flatten()[0][solution_batch[i].RevMpp] for i in range(50)]
+    jr_rev = [-solution_batch[i].dat['Jr'].flatten()[0][solution_batch[i].RevMpp] for i in range(50)]
+
+    j_fwd = [solution_batch[i].j[solution_batch[i].FwdMpp] for i in range(50)]
+    jl_fwd = [-solution_batch[i].dat['Jl'].flatten()[0][solution_batch[i].FwdMpp] for i in range(50)]
+    jr_fwd = [-solution_batch[i].dat['Jr'].flatten()[0][solution_batch[i].FwdMpp] for i in range(50)]
+
+    scan_rate = [label_modifier/solution_batch[i].label for i in range(50)]
+
+    fig, ax = plt.subplots()
+
+    ax.plot(scan_rate, j_rev, color='g')
+    ax.plot(scan_rate, jl_rev, color='b')
+    ax.plot(scan_rate, jr_rev, color='r')
+
+    ax.plot(scan_rate, j_fwd, color='g', linestyle='dashed')
+    ax.plot(scan_rate, jl_fwd, color='b', linestyle='dashed')
+    ax.plot(scan_rate, jr_fwd, color='r', linestyle='dashed')
+
+    current = ['Photocurrent', 'ETL recombination', 'HTL recombination']
+    colour = ['g', 'b', 'r']
+    for i, j in zip(current, colour):
+        ax.plot(0, 0, label=i, c=j)
+
+    direction = ['Reverse scan', 'Forward scan']
+    linestyle = ['solid', 'dashed']
+    for i, j in zip(direction, linestyle):
+        ax.plot(0, 0, label=i, linestyle=j, color='k')
+
+    ax.legend()
+    ax.set_title(title)
+
+    ax.set_xscale('log')
+    ax.set_xlabel('Scan rate (mV/s)')
+
+    ax.set_yscale('log')
+    ax.set_ylabel('Current density (mA/cm$^2$)')
+
+    # Axis control
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
+
+    # Save file:
+    if save == True:
+        fig.savefig(f'currents_scan_rate_{title}.png', dpi = 400)
