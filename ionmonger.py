@@ -273,7 +273,7 @@ def plot_electricpotential(solution, save=False, setax=False):
 
 
 
-def plot_anionvacancies(solution, save=False, setax=False, setax=False):
+def plot_anionvacancies(solution, save=False, setax=False):
 
     """
     Function that plots the anion vacancy distribution when given a Solution object.
