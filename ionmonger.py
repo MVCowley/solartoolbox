@@ -140,7 +140,7 @@ class Solution:
 
 
 
-def plot_electronsholes(solution, save=False):
+def plot_electronsholes(solution, save=False, setax=False):
 
     """
     Function that plots the electron and hole distributions when given a Solution object.
@@ -200,6 +200,11 @@ def plot_electronsholes(solution, save=False):
     ax.set_xlabel('Thickness (nm)')
     ax.set_ylabel('Carrier concentration (m$^{-3}$)')
 
+    # Axis control
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
+
     # Save file:
     if save == True:
         fig.savefig(f'np_dstrbn_{solution.label}.png', dpi = 400)
@@ -207,7 +212,7 @@ def plot_electronsholes(solution, save=False):
 
 
 
-def plot_electricpotential(solution, save=False):
+def plot_electricpotential(solution, save=False, setax=False):
 
     """
     Function that plots the electric potential distribution when given a Solution object.
@@ -256,6 +261,11 @@ def plot_electricpotential(solution, save=False):
     ax.set_xlabel('Thickness (nm)')
     ax.set_ylabel('Electric potential (V)')
 
+    # Axis control
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
+
     # Save file:
     if save == True:
         fig.savefig(f'pot_dstrbn_{solution.label}.png', dpi = 400)
@@ -263,7 +273,7 @@ def plot_electricpotential(solution, save=False):
 
 
 
-def plot_anionvacancies(solution, save=False):
+def plot_anionvacancies(solution, save=False, setax=False, setax=False):
 
     """
     Function that plots the anion vacancy distribution when given a Solution object.
@@ -292,6 +302,11 @@ def plot_anionvacancies(solution, save=False):
     ax.set_xlabel('Thickness (nm)')
     ax.set_ylabel('Anion vacancy density (m$^{-3}$)')
 
+    # Axis control
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
+
     # Save file:
     if save == True:
         fig.savefig(f'anion_vac_dstrbn_{solution.label}.png', dpi = 400)
@@ -299,7 +314,7 @@ def plot_anionvacancies(solution, save=False):
 
 
 
-def plot_zoomed_anionvacancies(solution, transportlayer, save=False, zoom=125):
+def plot_zoomed_anionvacancies(solution, transportlayer, save=False, zoom=125, setax=False):
 
     """
     Function that plots the anion vacancy distribution at a transport layer/perovskite interface when given a Solution object.
@@ -336,6 +351,11 @@ def plot_zoomed_anionvacancies(solution, transportlayer, save=False, zoom=125):
     ax.set_xlabel('Thickness (nm)')
     ax.set_ylabel('Anion vacancy density (m$^{-3}$)')
 
+    # Axis control
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
+
     # Save file:
     if save == True:
         if transportlayer == 'E':
@@ -355,7 +375,7 @@ def latex_table(solution):
     parameters_df = pd.DataFrame(data=[solution.paramsdic]).T
     print(parameters_df.to_latex())
 
-def plot_degree_of_hysteresis(solution_batch, precondition, title, save=False):
+def plot_degree_of_hysteresis(solution_batch, precondition, title, save=False, setax=False):
     scan_rate = [precondition/i.label for i in solution_batch]
     degreehyst = [i.degreehyst for i in solution_batch]
 
@@ -367,11 +387,16 @@ def plot_degree_of_hysteresis(solution_batch, precondition, title, save=False):
     ax.set_ylabel('Degree of hysteresis (%)')
     ax.set_title(f'Degree of hysteresis vs scan rate for {title}')
 
+    # Axis control
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
+
     # Save file:
     if save == True:
         fig.savefig(f'hysteresis_scan_rate_{title}.png', dpi = 400)
 
-def plot_electric_force_scan_rate(solution_batch, label_modifier, point_of_interest, title, save=False):
+def plot_electric_force_scan_rate(solution_batch, label_modifier, point_of_interest, title, save=False, setax=False):
     electric_force = [-(np.diff(i.phiP)/1e6)/(i.vectors['dx'][0].flatten()*i.widthP/1e9) for i in solution_batch]
     scan_rate = [label_modifier/i.label for i in solution_batch]
 
@@ -401,6 +426,11 @@ def plot_electric_force_scan_rate(solution_batch, label_modifier, point_of_inter
     ax.set_ylabel('Electric field (MV m$^{-1}$)')
     ax.set_xlabel('Scan rate (mV s$^{-1}$)')
     ax.set_title(f'Electric force vs scan rate for {title} at {point_of_interest}')
+
+    # Axis control
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
 
     # Save file:
     if save == True:
@@ -432,7 +462,7 @@ def srh_recombination_rate(solution):
     srh = [(n*p-i**2)/(t_n*p + t_p*n + (t_n + t_p)*i) for n, p in zip(electrons, holes)]
     return srh
 
-def plot_srh_scan_rate(batch_solution, label_modifier, point_of_interest, title, save=False):
+def plot_srh_scan_rate(batch_solution, label_modifier, point_of_interest, title, save=False, setax=False):
     scan_rate = [label_modifier/i.label for i in batch_solution]
     srh = [srh_recombination_rate(i) for i in batch_solution]
 
@@ -464,11 +494,16 @@ def plot_srh_scan_rate(batch_solution, label_modifier, point_of_interest, title,
     ax.set_ylabel('SRH recombination (m$^{-3}$ s$^{-2}$)')
     ax.set_title(f'SRH recombination vs scan rate for {title} at {point_of_interest}')
 
+    # Axis control
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
+
     # Save file:
     if save == True:
         fig.savefig(f'srh_recombination_scan_rate_{title}_{point_of_interest}.png', dpi = 400)
 
-def plot_jv_curve(solution, precondition, save=False):
+def plot_jv_curve(solution, precondition, save=False, setax=False):
 
     fig, ax = plt.subplots()
 
@@ -479,6 +514,11 @@ def plot_jv_curve(solution, precondition, save=False):
     ax.set_ylabel('Current density (mA cm$^{-2}$)')
     ax.set_xlabel('Voltage (V)')
     ax.set_title(f'jV curve for {precondition/solution.label}' + 'mV s$^{-1}$')
+
+    # Axis control
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
 
     # Save file:
     if save == True:
