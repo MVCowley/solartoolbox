@@ -415,11 +415,13 @@ def plot_electric_force_scan_rate(solution_batch, label_modifier, point_of_inter
         fwdvoc.append(solution_array[4][point_of_interest])
 
     lgndkeyval = ['RevVoc', 'RevMpp', 'Jsc', 'FwdMpp', 'FwdVoc']
+    colours = ['C0', 'C1', 'C2', 'C1', 'C0']
+    linestyle = ['dashed', 'dashed', 'solid', 'dotted', 'dotted']
 
     fig, ax = plt.subplots()
 
-    for i, j in zip(middle_force, lgndkeyval):
-        ax.plot(scan_rate, i, marker='o', markersize=3, label=j)
+    for i, j, k, l in zip(middle_force, lgndkeyval, colours, linestyle):
+        ax.plot(scan_rate, i, label=j, c=k, ls=l)
 
     ax.legend()
     ax.set_xscale('log')
@@ -487,7 +489,7 @@ def plot_srh_scan_rate(batch_solution, label_modifier, point_of_interest, title,
     fig, ax = plt.subplots()
 
     for i, j, k, l in zip(middle_srh, lgndkeyval, colours, linestyle):
-        ax.plot(scan_rate, i, marker='o', markersize=3, label=j, c=k, ls=l)
+        ax.plot(scan_rate, i, label=j, c=k, ls=l)
 
     ax.legend()
     ax.set_xscale('log')
