@@ -503,7 +503,7 @@ def plot_srh_scan_rate(batch_solution, label_modifier, point_of_interest, title,
     if save == True:
         fig.savefig(f'srh_recombination_scan_rate_{title}_{point_of_interest}.png', dpi = 400)
 
-def plot_jv_curve(solution, precondition, save=False, setax=False):
+def plot_jv_curve(solution, precondition, save=False, setax=False, sims=50):
 
     fig, ax = plt.subplots()
 
@@ -525,15 +525,15 @@ def plot_jv_curve(solution, precondition, save=False, setax=False):
         fig.savefig(f'jv_{precondition/solution.label}.png', dpi = 400)
 
 def plot_currents(solution_batch, label_modifier, title, save=False, setax=False):
-    j_rev = [solution_batch[i].j[solution_batch[i].RevMpp] for i in range(50)]
-    jl_rev = [-solution_batch[i].dat['Jl'].flatten()[0][solution_batch[i].RevMpp] for i in range(50)]
-    jr_rev = [-solution_batch[i].dat['Jr'].flatten()[0][solution_batch[i].RevMpp] for i in range(50)]
+    j_rev = [solution_batch[i].j[solution_batch[i].RevMpp] for i in range(sims)]
+    jl_rev = [-solution_batch[i].dat['Jl'].flatten()[0][solution_batch[i].RevMpp] for i in range(sims)]
+    jr_rev = [-solution_batch[i].dat['Jr'].flatten()[0][solution_batch[i].RevMpp] for i in range(sims)]
 
-    j_fwd = [solution_batch[i].j[solution_batch[i].FwdMpp] for i in range(50)]
-    jl_fwd = [-solution_batch[i].dat['Jl'].flatten()[0][solution_batch[i].FwdMpp] for i in range(50)]
-    jr_fwd = [-solution_batch[i].dat['Jr'].flatten()[0][solution_batch[i].FwdMpp] for i in range(50)]
+    j_fwd = [solution_batch[i].j[solution_batch[i].FwdMpp] for i in range(sims)]
+    jl_fwd = [-solution_batch[i].dat['Jl'].flatten()[0][solution_batch[i].FwdMpp] for i in range(sims)]
+    jr_fwd = [-solution_batch[i].dat['Jr'].flatten()[0][solution_batch[i].FwdMpp] for i in range(sims)]
 
-    scan_rate = [label_modifier/solution_batch[i].label for i in range(50)]
+    scan_rate = [label_modifier/solution_batch[i].label for i in range(sims)]
 
     fig, ax = plt.subplots()
 
