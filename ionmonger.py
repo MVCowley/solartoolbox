@@ -481,11 +481,13 @@ def plot_srh_scan_rate(batch_solution, label_modifier, point_of_interest, title,
         fwdvoc.append(solution_array[batch_solution[index].keyval[4]][point_of_interest])
 
     lgndkeyval = ['RevVoc', 'RevMpp', 'Jsc', 'FwdMpp', 'FwdVoc']
+    colours = ['C0', 'C1', 'C2', 'C1', 'C0']
+    linestyle = ['dashed', 'dashed', 'solid', 'dotted', 'dotted']
 
     fig, ax = plt.subplots()
 
-    for i, j in zip(middle_srh, lgndkeyval):
-        ax.plot(scan_rate, i, marker='o', markersize=3, label=j)
+    for i, j, k, l in zip(middle_srh, lgndkeyval, colours, linestyle):
+        ax.plot(scan_rate, i, marker='o', markersize=3, label=j, c=k, ls=l)
 
     ax.legend()
     ax.set_xscale('log')
@@ -525,6 +527,7 @@ def plot_jv_curve(solution, precondition, save=False, setax=False):
         fig.savefig(f'jv_{precondition/solution.label}.png', dpi = 400)
 
 def plot_currents(solution_batch, label_modifier, title, save=False, setax=False, sims=50):
+
     j_rev = [solution_batch[i].j[solution_batch[i].RevMpp] for i in range(sims)]
     jl_rev = [-solution_batch[i].dat['Jl'].flatten()[0][solution_batch[i].RevMpp] for i in range(sims)]
     jr_rev = [-solution_batch[i].dat['Jr'].flatten()[0][solution_batch[i].RevMpp] for i in range(sims)]
