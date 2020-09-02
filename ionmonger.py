@@ -383,7 +383,7 @@ def plot_degree_of_hysteresis(solution_batch, precondition, title, save=False, s
 
     ax.plot(scan_rate, degreehyst, marker='o', markersize=3)
     ax.set_xscale('log')
-    ax.set_xlabel('Scan rate mV (s$^{-1}$)')
+    ax.set_xlabel('Scan rate (mV s$^{-1}$)')
     ax.set_ylabel('Degree of hysteresis (%)')
     ax.set_title(f'Degree of hysteresis vs scan rate for {title}')
 
@@ -577,3 +577,38 @@ def plot_currents(solution_batch, label_modifier, title, save=False, setax=False
     # Save file:
     if save == True:
         fig.savefig(f'currents_scan_rate_{title}.png', dpi = 400)
+
+def plot_anion_vac_change(solution_batch, label_modifier, title, zoom=125, setax=False, save=False):
+    scan_rate = [label_modifier/i.label for i in solution_batch]
+
+    etl_data = []
+    htl_data = []
+
+    for i in solution_batch:
+        etl_anion_vacancies = np.asarray(i.ionv, dtype=object)[:,0:zoom]
+        etl_change = etl_anion_vacancies.max() - etl_anion_vacancies.min()
+        etl_data.append(etl_change)
+
+        htl_anion_vacancies = np.asarray(i.ionv, dtype=object)[:,-zoom:-1]
+        htl_change = htl_anion_vacancies.max() - htl_anion_vacancies.min()
+        htl_data.append(htl_change)
+
+    fig, ax = plt.subplots()
+
+    ax.plot(scan_rate, etl_data, c='b', label='Vacancy change at ETL')
+    ax.plot(scan_rate, htl_data, c='r', label='Vacancy change at HTL')
+
+    ax.legend()
+    ax.set_xscale('log')
+    ax.set_xlabel('Scan rate (mV s$^{-1}$)')
+    ax.set_yscale('log')
+    ax.set_ylabel('Change in anion vacancy density (m$^{-3}$)')
+    ax.set_title(f'Vacancy delta during scan for {title}')
+
+    if setax is not False:
+        ax.set_xlim(setax[0][0], setax[0][1])
+        ax.set_ylim(setax[1][0], setax[1][1])
+
+    # Save file:
+    if save == True:
+        fig.savefig(f'anion_change_{title}.png', dpi = 400)
