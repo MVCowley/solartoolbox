@@ -381,7 +381,7 @@ def plot_degree_of_hysteresis(solution_batch, precondition, title, save=False, s
 
     fig, ax = plt.subplots()
 
-    ax.plot(scan_rate, degreehyst, marker='o', markersize=3)
+    ax.plot(scan_rate, degreehyst, marker='o', markersize=3, c='p')
     ax.set_xscale('log')
     ax.set_xlabel('Scan rate (mV s$^{-1}$)')
     ax.set_ylabel('Degree of hysteresis (%)')
