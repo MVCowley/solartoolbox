@@ -212,7 +212,7 @@ def plot_electronsholes(solution, save=False, setax=False):
 
 
 
-def plot_electricpotential(solution, save=False, setax=False):
+def plot_electricpotential(solution, title, save=False, setax=False):
 
     """
     Function that plots the electric potential distribution when given a Solution object.
@@ -257,7 +257,7 @@ def plot_electricpotential(solution, save=False, setax=False):
 
     # Plot legend and axes labels
     ax.legend()
-    ax.set_title(f'Electric potential distribution for {solution.label}')
+    ax.set_title(f'Electric potential distribution for {title}')
     ax.set_xlabel('Thickness (nm)')
     ax.set_ylabel('Electric potential (V)')
 
@@ -268,7 +268,7 @@ def plot_electricpotential(solution, save=False, setax=False):
 
     # Save file:
     if save == True:
-        fig.savefig(f'pot_dstrbn_{solution.label}.png', dpi = 400)
+        fig.savefig(f'pot_dstrbn_{title}.png', dpi = 400)
 
 
 
