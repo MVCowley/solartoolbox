@@ -130,10 +130,10 @@ class Solution:
 
         # Degree of hysteresis calculation
         self.revy = self.j[self.RevVoc:self.Jsc+1]
-        self.revarea = np.trapz(self.revy, dx = np.diff(-self.revvdat)[0])
+        self.revarea = np.trapz(self.revy, x=-self.v[self.RevVoc:self.Jsc+1])
 
         self.fwdy = self.j[self.Jsc:self.FwdVoc+1]
-        self.fwdarea = np.trapz(self.fwdy, dx = np.diff(self.fwdvdat)[0])
+        self.fwdarea = np.trapz(self.fwdy, x=self.v[self.Jsc:self.FwdVoc+1])
 
         self.degreehyst = ((self.revarea - self.fwdarea) / self.revarea) * 100
 
