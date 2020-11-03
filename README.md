@@ -7,6 +7,8 @@
 
 Modify your parameter input file to take `loop_item` as its argument and place `loop_item` as the variable you wish to iterate through.
 
+```
+
   % Begin
   clear;
   tic;
@@ -36,3 +38,5 @@ Modify your parameter input file to take `loop_item` as its argument and place `
   % Stop stopwatch and output nice message
   fprintf('Completed simulation at %s, taking %s\n', ...
       datestr(now), secs2hms(toc) )
+
+```
