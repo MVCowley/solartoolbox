@@ -79,6 +79,7 @@ class Solution:
         self.n0 = self.paramsdic['N0'][0]
         self.dE = self.paramsdic['dE'][0]
         self.dH = self.paramsdic['dH'][0]
+        self.vt = self.paramsdic['VT'][0]
 
         # Assign RevVoc, RevMpp, Jsc, FwdMpp, FwdVoc
         self.revjdat = self.j[self.stage[-3]:self.stage[-2]]
@@ -114,9 +115,9 @@ class Solution:
         self.pdat = [np.append(i, k) for i, k in zip(self.pdatP, self.pdatH)]
 
         # Electric potential
-        self.phiP = [self.dstrbns['phi'][0][i,:] for i in self.keyval]
-        self.phiE = [self.dstrbns['phiE'][0][i,:] for i in self.keyval]
-        self.phiH = [self.dstrbns['phiH'][0][i,:] for i in self.keyval]
+        self.phiP = [self.dstrbns['phi'][0][i,:]*self.vt for i in self.keyval]
+        self.phiE = [self.dstrbns['phiE'][0][i,:]*self.vt for i in self.keyval]
+        self.phiH = [self.dstrbns['phiH'][0][i,:]*self.vt for i in self.keyval]
         self.phiEP = [np.append(i, k) for i, k in zip(self.phiE, self.phiP)]
         self.phi = [np.append(i, k) for i, k in zip(self.phiEP, self.phiH)]
 
@@ -408,7 +409,7 @@ def plot_degree_of_hysteresis(solution_batch, precondition, title, save=False, s
         fig.savefig(f'hysteresis_scan_rate_{title}.png', dpi = 400)
 
 def plot_electric_force_scan_rate(solution_batch, label_modifier, point_of_interest, title, save=False, setax=False):
-    electric_force = [-(np.diff(i.phiP)*i.paramsdic['VT'][0]/1e6)/(i.vectors['dx'][0].flatten()*i.widthP/1e9) for i in solution_batch]
+    electric_force = [-(np.diff(i.phiP)/1e6)/(i.vectors['dx'][0].flatten()*i.widthP/1e9) for i in solution_batch]
     scan_rate = [label_modifier/i.label for i in solution_batch]
 
     revvoc = []
