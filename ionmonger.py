@@ -2,19 +2,31 @@ import numpy as np
 import scipy.io as sio
 import matplotlib.pyplot as plt
 
+class Batch_Data:
+
+    def __init__(self, data_location):
+
+        """
+
+        A class object which loads in a IonMonger batch file.
+
+        """
+
+        self.raw = sio.loadmat(file_name=data_location)['results']
+
 class Solution:
 
     SPLIT_JV = 100
 
-    def __init__(self, data_location, sol_number):
+    def __init__(self, batch_data, sol_number):
 
         """
-        A class object which holds formatted data from IonMonger solution files. Designed to interact with an N by 2 cell of solution files produced by the batch_run.m
+        A class object which holds formatted data from IonMonger solution files. Designed to interact with an N by 2 array of solution files produced by the batch_run.m
         script.
 
         Arguments:
 
-            data_location: location of batch results file
+            batch_data: batch results file
             sol_number: index of solution file in batch file to access
 
         Attributes:
@@ -51,9 +63,8 @@ class Solution:
         """
 
         # Format data
-        self.raw = sio.loadmat(data_location)
-        self.label = self.raw['results'][sol_number, 0][0][0]
-        self.dat = self.raw['results'][sol_number, 1]
+        self.label = batch_data.raw[sol_number, 0][0][0]
+        self.dat = batch_data.raw[sol_number, 1]
         self.dstrbns = self.dat['dstrbns'][0][0][0]
         self.vectors = self.dat['vectors'][0][0][0]
         self.params = self.dat['params'][0][0][0]
@@ -65,9 +76,9 @@ class Solution:
         self.stages = int((len(self.params['applied_voltage'][0][0])-1)/3)
         self.stage = [i*self.SPLIT_JV for i in range(self.stages+1)]
         self.paramsdic = {l:v.flatten() for l, v in zip(self.params[0].dtype.names, self.params[0])}
-
-        # Conversion parameter
-        self.nm2m = 1e27
+        self.n0 = self.paramsdic['N0'][0]
+        self.dE = self.paramsdic['dE'][0]
+        self.dH = self.paramsdic['dH'][0]
 
         # Assign RevVoc, RevMpp, Jsc, FwdMpp, FwdVoc
         self.revjdat = self.j[self.stage[-3]:self.stage[-2]]
@@ -93,13 +104,13 @@ class Solution:
         self.keyval = [self.RevVoc, self.RevMpp, self.Jsc, self.FwdMpp, self.FwdVoc]
 
         # Electron concentration
-        self.ndatP = [self.dstrbns['n'][0][i,:]*self.nm2m for i in self.keyval]
-        self.ndatE = [self.dstrbns['nE'][0][i,:]*self.nm2m for i in self.keyval]
+        self.ndatP = [self.dstrbns['n'][0][i,:]*self.dE for i in self.keyval]
+        self.ndatE = [self.dstrbns['nE'][0][i,:]*self.dE for i in self.keyval]
         self.ndat = [np.append(i, k) for i, k in zip(self.ndatE, self.ndatP)]
 
         # Hole concentration
-        self.pdatP = [self.dstrbns['p'][0][i,:]*self.nm2m for i in self.keyval]
-        self.pdatH = [self.dstrbns['pH'][0][i,:]*self.nm2m for i in self.keyval]
+        self.pdatP = [self.dstrbns['p'][0][i,:]*self.dH for i in self.keyval]
+        self.pdatH = [self.dstrbns['pH'][0][i,:]*self.dH for i in self.keyval]
         self.pdat = [np.append(i, k) for i, k in zip(self.pdatP, self.pdatH)]
 
         # Electric potential
@@ -110,7 +121,7 @@ class Solution:
         self.phi = [np.append(i, k) for i, k in zip(self.phiEP, self.phiH)]
 
         # Ion vacancy density
-        self.ionv = [self.dstrbns['P'][0][i,:]*self.nm2m for i in self.keyval]
+        self.ionv = [self.dstrbns['P'][0][i,:]*self.n0 for i in self.keyval]
 
         # Electron x data
         self.nxP = self.vectors['x'][0]*self.widthP
@@ -397,7 +408,7 @@ def plot_degree_of_hysteresis(solution_batch, precondition, title, save=False, s
         fig.savefig(f'hysteresis_scan_rate_{title}.png', dpi = 400)
 
 def plot_electric_force_scan_rate(solution_batch, label_modifier, point_of_interest, title, save=False, setax=False):
-    electric_force = [-(np.diff(i.phiP)/1e6)/(i.vectors['dx'][0].flatten()*i.widthP/1e9) for i in solution_batch]
+    electric_force = [-(np.diff(i.phiP)*i.paramsdic['VT'][0]/1e6)/(i.vectors['dx'][0].flatten()*i.widthP/1e9) for i in solution_batch]
     scan_rate = [label_modifier/i.label for i in solution_batch]
 
     revvoc = []
