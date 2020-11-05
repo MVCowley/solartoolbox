@@ -450,31 +450,22 @@ def plot_electric_force_scan_rate(solution_batch, label_modifier, point_of_inter
     if save == True:
         fig.savefig(f'electric_force_scan_rate_{title}_{point_of_interest}.png', dpi = 400)
 
-def intrinsic_carriers(solution):
-
-    nc = solution.paramsdic['gc']
-    nv = solution.paramsdic['gv']
-    ec = solution.paramsdic['Ec']
-    ev = solution.paramsdic['Ev']
-    kb = solution.paramsdic['kB']
-    T = solution.paramsdic['T']
-
-    i = np.sqrt(nc*nv*np.exp(-(ec-ev)/(kb*T)))
-    return i
-
 def srh_recombination_rate(solution):
 
-    steps = len(solution.dstrbns['n'][0])
+    n = solution.dstrbns['n'][0]
+    p = solution.dstrbns['p'][0]
+    ni2 = solution.paramsdic['ni2']
+    gamma = solution.paramsdic['gamma']
+    tor = solution.paramsdic['tor']
+    tor3 = solution.paramsdic['tor3']
 
-    electrons = [solution.dstrbns['n'][0][i,:]*solution.paramsdic['dE'] for i in range(1, steps)]
-    holes = [solution.dstrbns['p'][0][i,:]*solution.paramsdic['dH'] for i in range(1, steps)]
+    rescale = solution.paramsdic['G0']
 
-    i = intrinsic_carriers(solution)
-    t_n = solution.paramsdic['tn']
-    t_p = solution.paramsdic['tp']
+    srh = gamma*(p-ni2/n)/(1+tor*p/n+tor3/n)*(n>=tor*p)*(n>=tor3) \
+        + gamma*(n-ni2/p)/(n/p+tor+tor3/p)*(tor*p>n)*(tor*p>tor3) \
+        + gamma*(p*n-ni2)/(n+tor*p+tor3)*(tor3>n)*(tor3>=tor*p)
 
-    srh = [(n*p-i**2)/(t_n*p + t_p*n + (t_n + t_p)*i) for n, p in zip(electrons, holes)]
-    return srh
+    return srh * rescale
 
 def plot_srh_scan_rate(batch_solution, label_modifier, point_of_interest, title, save=False, setax=False):
     scan_rate = [label_modifier/i.label for i in batch_solution]
