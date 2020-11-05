@@ -615,3 +615,168 @@ def plot_anion_vac_change(solution_batch, label_modifier, title, zoom=125, setax
     # Save file:
     if save == True:
         fig.savefig(f'anion_change_{title}.png', dpi = 400)
+
+def for_x_nondim_species_current(solution, species, x):
+
+    time = sol[0].dat['time'][0][0][0]
+    density = solution.dstrbns[species][0]
+    phi = solution.dstrbns['phi'][0]
+    dx = solution.vectors['dx'][0].flatten()
+    mid = x
+
+    if species == 'n':
+        species_param = solution.params['Kn'][0][0][0]
+        species_current = species_param / dx[mid] * (
+            density[:,mid+1] - density[:,mid]
+            - ( density[:,mid+1] + density[:,mid] )
+            * ( phi[:,mid+1] - phi[:,mid] ) / 2 )
+
+    elif species == 'p':
+        species_param = solution.params['Kp'][0][0][0]
+        species_current = - species_param / dx[mid] * (
+            density[:,mid+1] - density[:,mid]
+            + ( density[:,mid+1] + density[:,mid] )
+            * ( phi[:,mid+1] - phi[:,mid] ) / 2 )
+
+    elif species == 'P':
+        species_param = solution.params['dpf'][0][0][0]
+        species_current = - species_param / dx[mid] * (
+            density[:,mid+1] - density[:,mid]
+            + ( density[:,mid+1] + density[:,mid] )
+            * ( phi[:,mid+1] - phi[:,mid] ) / 2 )
+    else:
+        print('Please enter either n, p, or P for species.')
+
+    return species_current
+
+def for_x_nondim_current(solution, x):
+
+    jn = for_x_nondim_species_current(solution, 'n', x)
+    jp = for_x_nondim_species_current(solution, 'p', x)
+    jf = for_x_nondim_species_current(solution, 'P', x)
+
+    time = sol[0].dat['time'][0][0][0]
+    phi = solution.dstrbns['phi'][0]
+    dx = solution.vectors['dx'][0].flatten()
+    dt = np.diff(sol[0].dat['time'][0][0][0])
+    mid = x
+
+    dis_param = solution.params['dpt'][0][0][0]
+    jd = np.empty(shape=(301))
+    jd[0] = None
+    for i in range(1, len(time+1)):
+        jd[i] = - dis_param / dx[mid] * (
+            phi[i,mid+1] - phi[i,mid] - phi[i-1,mid+1] + phi[i-1,mid] )
+
+    pbi = solution.params['pbi'][0][0][0]
+    arp = sol[0].params['ARp'][0][0][0]
+    jr = np.empty(shape=(301))
+    for i in range(len(time)-1):
+        jr[i] = ( pbi - ( solution.dstrbns['phiE'][0][i,0]
+                         - solution.dstrbns['phiH'][0][i,-1] ) ) / arp
+
+    current = jn + jp - jf - jd - jr
+
+    return current
+
+def for_x_seperate_nondim_current_npP(solution, x):
+
+    jn = for_x_nondim_species_current(solution, 'n', x)
+    jp = for_x_nondim_species_current(solution, 'p', x)
+    jf = for_x_nondim_species_current(solution, 'P', x)
+
+    time = sol[0].dat['time'][0][0][0]
+    phi = solution.dstrbns['phi'][0]
+    dx = solution.vectors['dx'][0].flatten()
+    dt = np.diff(sol[0].dat['time'][0][0][0])
+    mid = x
+
+    dis_param = solution.params['dpt'][0][0][0]
+    jd = np.empty(shape=(301))
+    jd[0] = None
+    for i in range(1, len(time+1)):
+        jd[i] = - dis_param / dx[mid] * (
+            phi[i,mid+1] - phi[i,mid] - phi[i-1,mid+1] + phi[i-1,mid] )
+
+    pbi = solution.params['pbi'][0][0][0]
+    arp = sol[0].params['ARp'][0][0][0]
+    jr = np.empty(shape=(301))
+    for i in range(len(time)-1):
+        jr[i] = ( pbi - ( solution.dstrbns['phiE'][0][i,0]
+                         - solution.dstrbns['phiH'][0][i,-1] ) ) / arp
+
+    return jn, jp, jf
+
+def dimensionalised_current_vector_npP(solution):
+
+    grid = len(solution.vectors['dx'][0].flatten())
+    time = len(solution.v)
+    for_x_seperate_current = np.empty((3, grid, time))
+
+    for i in range(grid):
+        x_current = for_x_seperate_nondim_current_npP(solution, i)
+        for j, k in enumerate(x_current):
+            for_x_seperate_current[j, i] = k * solution.params['jay'][0][0][0] * 10
+
+    return for_x_seperate_current
+
+def drift_velocity(solution):
+
+    grid = len(solution.vectors['dx'][0].flatten())
+    time = len(solution.v)
+
+    current = dimensionalised_current_vector_npP(solution)
+    carrier = ['n', 'p', 'P']
+
+    q = solution.params['q'][0][0][0]
+
+    drift_velocity_vector = np.empty((3, grid, time))
+
+    for i, j in enumerate(carrier):
+        if j == 'n':
+            density = solution.dstrbns[j][0] * solution.params['dE'][0][0][0]
+        elif j == 'p':
+            density = solution.dstrbns[j][0] * solution.params['dH'][0][0][0]
+        elif j == 'P':
+            density = solution.dstrbns[j][0] * solution.params['N0'][0][0][0]
+        for k, l in enumerate(current[i]):
+            drift_velocity_i_k = l / q / density[:, k]
+            drift_velocity_vector[i, k] = drift_velocity_i_k
+
+    return drift_velocity_vector
+
+def drift_velocity_set(solutions):
+
+    grid = len(solutions[0].vectors['dx'][0].flatten())
+    time = len(solutions[0].v)
+    drift_set = np.empty((len(solutions), 3, grid, time))
+
+    for i in range(len(drift_set)):
+        drift = drift_velocity(solutions[i])
+        drift_set[i] = drift
+
+    return drift_set
+
+def electric_field(solution):
+
+    grid = len(solution.vectors['dx'][0].flatten())
+    time = len(solution.v)
+
+    electric_potential = solution.dstrbns['phi'][0] * solution.params['VT'][0][0][0] / 1e3
+    dx = solution.vectors['dx'][0].flatten() * solution.widthP / 1e9
+
+    electric_field_sol = - np.diff(electric_potential) / dx
+
+    return electric_field_sol
+
+def electric_field_set(solutions):
+
+    grid = len(solutions[0].vectors['dx'][0].flatten())
+    time = len(solutions[0].v)
+    field_set = np.empty((len(solutions), grid, time))
+
+    for i in range(len(field_set)):
+        field = electric_field(solutions[i]).T
+        field_set[i] = field
+
+    return field_set
