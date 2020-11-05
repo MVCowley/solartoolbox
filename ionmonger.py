@@ -466,8 +466,8 @@ def srh_recombination_rate(solution):
 
     steps = len(solution.dstrbns['n'][0])
 
-    electrons = [solution.dstrbns['n'][0][i,:]*solution.nm2m for i in range(1, steps)]
-    holes = [solution.dstrbns['p'][0][i,:]*solution.nm2m for i in range(1, steps)]
+    electrons = [solution.dstrbns['n'][0][i,:]*solution.paramsdic['dE'] for i in range(1, steps)]
+    holes = [solution.dstrbns['p'][0][i,:]*solution.paramsdic['dH'] for i in range(1, steps)]
 
     i = intrinsic_carriers(solution)
     t_n = solution.paramsdic['tn']
