@@ -24,11 +24,10 @@ def stats_dictionary(file_paths, size):
     file paths and the size of the pixels.
 
     Dictionary structured as:
-        {pixel:
-        '{'jsc': jsc, 'mean_pce': mean_pce, 'hysteresis': hysteresis,
-        'mean_voc': mean_voc, 'mean_ff': mean_ff,
-        'reverse': {'voc': reverse_voc, 'ff': reverse_ff, 'pce': reverse_pce},
-        'forward': {'voc': forward_voc, 'ff': forward_ff, 'pce': forward_pce}}'
+        {'label':
+        'jsc': jsc, 'mean_voc': mean_voc, 'mean_ff': mean_ff,
+        'reverse_voc': reverse_voc, 'reverse_ff': reverse_ff, 'reverse_pce': reverse_pce,
+        'forward_voc': forward_voc, 'forward_ff': forward_ff, 'forward_pce': forward_pce}
         }
     '''
 
