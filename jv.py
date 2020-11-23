@@ -39,15 +39,36 @@ def stats_dictionary(file_paths, size):
         stats_dictionary[f'{jv.label}'] = stats
     return stats_dictionary
 
+def stats_dataframe(file_paths, file_names, size):
+
+    '''
+    Returns a Pandas DataFrame containing the file_names as indexes and the keys
+    from the JvData.calculate_stats() method as columns.
+
+    pixel_stats = []
+    pixel_names = []
+
+    for i, j in zip(file_paths, file_names):
+        jv = JvData(i, j)
+        stats = jv.calculate_stats(size)
+        pixel_stats.append(stats)
+        pixel_names.append(jv.label)
+
+    return pd.DataFrame(pixel_stats, index=pixel_names)
+    '''
+
 class JvData:
 
     '''
     Returns an object with a label attribute and data array attribute.
     '''
 
-    def __init__(self, path, delimiter=',', string_slice=(-4, -19)):
+    def __init__(self, path, name=False, delimiter=',', string_slice=(-4, -19)):
         self.data = np.genfromtxt(path, delimiter=delimiter)
-        self.label = path[string_slice[1]:string_slice[0]]
+        if name is False:
+            self.label = path[string_slice[1]:string_slice[0]]
+        else:
+            self.label = name
 
     def plot_jv(self, save=False, setax=False):
 
@@ -82,10 +103,10 @@ class JvData:
         Returns a dictionary of pixel statistics.
 
         Dictionary structured as:
-            '{'jsc': jsc, 'mean_pce': mean_pce, 'hysteresis': hysteresis,
-            'mean_voc': mean_voc, 'mean_ff': mean_ff,
-            'reverse': {'voc': reverse_voc, 'ff': reverse_ff, 'pce': reverse_pce},
-            'forward': {'voc': forward_voc, 'ff': forward_ff, 'pce': forward_pce}}
+        {'mean_pce': mean_pce, 'hysteresis': hysteresis,
+        'jsc': jsc, 'mean_voc': mean_voc, 'mean_ff': mean_ff,
+        'reverse_voc': reverse_voc, 'reverse_ff': reverse_ff, 'reverse_pce': reverse_pce,
+        'forward_voc': forward_voc, 'forward_ff': forward_ff, 'forward_pce': forward_pce}
         '''
 
         half = int(len(self.data[:, 1]) / 2)
@@ -129,7 +150,7 @@ class JvData:
                                 x=self.data[half:forward_voc_index, 0])
         hysteresis = (reverse_area - forward_area) / reverse_area
 
-        return {'jsc': jsc, 'mean_pce': mean_pce, 'hysteresis': hysteresis,
-                'mean_voc': mean_voc, 'mean_ff': mean_ff,
-                'reverse': {'voc': reverse_voc, 'ff': reverse_ff, 'pce': reverse_pce},
-                'forward': {'voc': forward_voc, 'ff': forward_ff, 'pce': forward_pce}}
+        return {'mean_pce': mean_pce, 'hysteresis': hysteresis,
+                'jsc': jsc, 'mean_voc': mean_voc, 'mean_ff': mean_ff,
+                'reverse_voc': reverse_voc, 'reverse_ff': reverse_ff, 'reverse_pce': reverse_pce,
+                'forward_voc': forward_voc, 'forward_ff': forward_ff, 'forward_pce': forward_pce}
