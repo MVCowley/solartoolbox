@@ -8,15 +8,18 @@ import matplotlib.pyplot as plt
 def load_file_paths(directory):
 
     '''
-    Returns a recursive list of file paths when given a target directory.
+    Returns a recursive list of file paths and file names when given
+    a target directory.
     '''
 
     file_paths = []
+    file_names = []
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".csv"):
                 file_paths.append(os.path.join(root, file))
-    return file_paths
+                file_names.append(file)
+    return file_paths, file_names
 
 def stats_dictionary(file_paths, size):
 
