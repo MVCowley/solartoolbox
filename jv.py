@@ -47,6 +47,7 @@ def stats_dataframe(file_paths, file_names, size):
     '''
     Returns a Pandas DataFrame containing the file_names as indexes and the keys
     from the JvData.calculate_stats() method as columns.
+    '''
 
     pixel_stats = []
     pixel_names = []
@@ -58,7 +59,6 @@ def stats_dataframe(file_paths, file_names, size):
         pixel_names.append(jv.label)
 
     return pd.DataFrame(pixel_stats, index=pixel_names)
-    '''
 
 class JvData:
 
