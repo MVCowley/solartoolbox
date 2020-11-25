@@ -618,7 +618,6 @@ def plot_anion_vac_change(solution_batch, label_modifier, title, zoom=125, setax
 
 def for_x_nondim_species_current(solution, species, x):
 
-    time = sol[0].dat['time'][0][0][0]
     density = solution.dstrbns[species][0]
     phi = solution.dstrbns['phi'][0]
     dx = solution.vectors['dx'][0].flatten()
@@ -655,10 +654,10 @@ def for_x_nondim_current(solution, x):
     jp = for_x_nondim_species_current(solution, 'p', x)
     jf = for_x_nondim_species_current(solution, 'P', x)
 
-    time = sol[0].dat['time'][0][0][0]
+    time = solution.dat['time'][0][0][0]
     phi = solution.dstrbns['phi'][0]
     dx = solution.vectors['dx'][0].flatten()
-    dt = np.diff(sol[0].dat['time'][0][0][0])
+    dt = np.diff(time)
     mid = x
 
     dis_param = solution.params['dpt'][0][0][0]
@@ -669,7 +668,7 @@ def for_x_nondim_current(solution, x):
             phi[i,mid+1] - phi[i,mid] - phi[i-1,mid+1] + phi[i-1,mid] )
 
     pbi = solution.params['pbi'][0][0][0]
-    arp = sol[0].params['ARp'][0][0][0]
+    arp = solution.params['ARp'][0][0][0]
     jr = np.empty(shape=(301))
     for i in range(len(time)-1):
         jr[i] = ( pbi - ( solution.dstrbns['phiE'][0][i,0]
@@ -685,10 +684,10 @@ def for_x_seperate_nondim_current_npP(solution, x):
     jp = for_x_nondim_species_current(solution, 'p', x)
     jf = for_x_nondim_species_current(solution, 'P', x)
 
-    time = sol[0].dat['time'][0][0][0]
+    time = solution.dat['time'][0][0][0]
     phi = solution.dstrbns['phi'][0]
     dx = solution.vectors['dx'][0].flatten()
-    dt = np.diff(sol[0].dat['time'][0][0][0])
+    dt = np.diff(time)
     mid = x
 
     dis_param = solution.params['dpt'][0][0][0]
@@ -699,7 +698,7 @@ def for_x_seperate_nondim_current_npP(solution, x):
             phi[i,mid+1] - phi[i,mid] - phi[i-1,mid+1] + phi[i-1,mid] )
 
     pbi = solution.params['pbi'][0][0][0]
-    arp = sol[0].params['ARp'][0][0][0]
+    arp = solution.params['ARp'][0][0][0]
     jr = np.empty(shape=(301))
     for i in range(len(time)-1):
         jr[i] = ( pbi - ( solution.dstrbns['phiE'][0][i,0]
