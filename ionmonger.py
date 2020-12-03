@@ -492,6 +492,18 @@ def srh_recombination_rate(solution):
 
     return srh * rescale
 
+def bimolecular_recombination(solution):
+
+    n = solution.dstrbns['n'][0]
+    p = solution.dstrbns['p'][0]
+    ni2 = solution.paramsdic['ni2']
+    brate = solution.paramsdic['brate']
+    rescale = solution.paramsdic['G0']
+
+    bimolecular = brate * (n*p-ni2)
+
+    return bimolecular * rescale
+
 def plot_srh_scan_rate(batch_solution, label_modifier, point_of_interest, title, save=False, setax=False):
     scan_rate = [label_modifier/i.label for i in batch_solution]
     srh = [srh_recombination_rate(i) for i in batch_solution]
