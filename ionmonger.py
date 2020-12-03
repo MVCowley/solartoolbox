@@ -803,7 +803,7 @@ def electric_field_set(solutions):
 
     return field_set
 
-def plot_scan_tracker(solution, save=False, titlemod=False):
+def plot_scan_tracker_bulk_srh(solution, save=False, titlemod=False):
     fig, ax = plt.subplots()
 
     ax.plot(range(301), srh_recombination_rate(solution)[:, 200], label='Bulk SRH rate', color='k')
