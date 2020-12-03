@@ -172,7 +172,7 @@ class Solution:
         If creating a Solution object from a single sol output of IonMonger, use this classmethod.
         """
         if within_struct is True:
-            data=sio.loadmat(file_name=file_location)[key][0]
+            data=sio.loadmat(file_name=file_location)[key][0][0]
         else:
             data=sio.loadmat(file_name=file_location)[key]
         return cls(data)
