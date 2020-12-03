@@ -64,11 +64,12 @@ class Solution:
 
         # Load data from factory methods
         self.label = label
-        self.dstrbns = data['dstrbns'][0][0][0]
-        self.vectors = data['vectors'][0][0][0]
-        self.params = data['params'][0][0][0]
-        self.j = data['J'][0][0].flatten()
-        self.v = data['V'][0][0].flatten()
+        self.dat = data
+        self.dstrbns = self.dat['dstrbns'][0][0][0]
+        self.vectors = self.dat['vectors'][0][0][0]
+        self.params = self.dat['params'][0][0][0]
+        self.j = self.dat['J'][0][0].flatten()
+        self.v = self.dat['V'][0][0].flatten()
 
         # Simulation info
         self.widthP = self.params['b'][0][0][0]*1e9
