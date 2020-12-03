@@ -2,7 +2,7 @@ import numpy as np
 import scipy.io as sio
 import matplotlib.pyplot as plt
 
-class Batch_Data:
+class BatchData:
 
     def __init__(self, data_location):
 
@@ -18,16 +18,16 @@ class Solution:
 
     SPLIT_JV = 100
 
-    def __init__(self, batch_data, sol_number):
+    def __init__(self, data, label=None):
 
         """
-        A class object which holds formatted data from IonMonger solution files. Designed to interact with an N by 2 array of solution files produced by the batch_run.m
-        script.
+        A class object which holds formatted data from IonMonger solution files. Designed to be called from
+        either classmethod from_batch() or from_single().
 
         Arguments:
 
-            batch_data: batch results file
-            sol_number: index of solution file in batch file to access
+            data: data from scipy.io.loadmat()
+            label: index provided by from_batch() for scan rate plots
 
         Attributes:
 
@@ -62,14 +62,13 @@ class Solution:
 
         """
 
-        # Format data
-        self.label = batch_data.raw[sol_number, 0][0][0]
-        self.dat = batch_data.raw[sol_number, 1]
-        self.dstrbns = self.dat['dstrbns'][0][0][0]
-        self.vectors = self.dat['vectors'][0][0][0]
-        self.params = self.dat['params'][0][0][0]
-        self.j = self.dat['J'][0][0].flatten()
-        self.v = self.dat['V'][0][0].flatten()
+        # Load data from factory methods
+        self.label = label
+        self.dstrbns = data['dstrbns'][0][0][0]
+        self.vectors = data['vectors'][0][0][0]
+        self.params = data['params'][0][0][0]
+        self.j = data['J'][0][0].flatten()
+        self.v = data['V'][0][0].flatten()
 
         # Simulation info
         self.widthP = self.params['b'][0][0][0]*1e9
@@ -149,8 +148,31 @@ class Solution:
 
         self.degreehyst = ((self.revarea - self.fwdarea) / self.revarea) * 100
 
+    @classmethod
+    def from_batch(cls, batch_data, sol_number):
+        """
+        If creating Solution objects from the batch script in the readme of solartoolbox, use this
+        classmethod.
 
+        batch_data: class object supplied by BatchData()
+        sol_number: index of solution file in batch file to access
 
+        Can create a list of solution objects via:
+            batch_load = BatchData(batch)
+            batch_sol = [Solution.from_batch(batch_load, i) for i in range(len(batch_load.raw))]
+        """
+        label = batch_data.raw[sol_number, 0][0][0]
+        dat = batch_data.raw[sol_number, 1]
+        return cls(data=dat, label=label)
+
+    @classmethod
+    def from_single(cls, file_location):
+        """
+        If creating a Solution object from a single sol output of IonMonger, use this classmethod.
+        """
+        data=sio.loadmat(file_name=file_location)['sol']
+        print(data.shape)
+        return cls(data)
 
 def plot_electronsholes(solution, save=False, setax=False):
 
