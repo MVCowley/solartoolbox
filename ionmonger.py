@@ -167,12 +167,14 @@ class Solution:
         return cls(data=dat, label=label)
 
     @classmethod
-    def from_single(cls, file_location, key='sol'):
+    def from_single(cls, file_location, key='sol', within_struct=False):
         """
         If creating a Solution object from a single sol output of IonMonger, use this classmethod.
         """
-        data=sio.loadmat(file_name=file_location)[key]
-        print(data.shape)
+        if within_struct is True:
+            data=sio.loadmat(file_name=file_location)[key][0]
+        else:
+            data=sio.loadmat(file_name=file_location)[key]
         return cls(data)
 
 def plot_electronsholes(solution, save=False, setax=False):
