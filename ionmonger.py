@@ -802,3 +802,38 @@ def electric_field_set(solutions):
         field_set[i] = field
 
     return field_set
+
+def plot_scan_tracker(solution, save=False, titlemod=False):
+    fig, ax = plt.subplots()
+
+    ax.plot(range(301), srh_recombination_rate(solution)[:, 200], label='Bulk SRH rate', color='k')
+    ax.plot(0, 0, label='Bulk field strength', color='k', linestyle='--')
+    ax.plot(0, 0, label='Current density', color='k', linestyle=':')
+
+    ax.axvline(x=100, linewidth=1.5, label='Scan start - 1.2 V', color='C0')
+    ax.axvline(x=200, linewidth=1.5, label='Short-circuit - 0 V', color='C3')
+
+    ax.legend(bbox_to_anchor=(0, 1, 1, 0), loc="lower left", mode="expand", ncol=2)
+    ax.set_xlim(0, 300)
+    ax.set_yscale('log')
+    ax.set_xlabel('Simulation step count')
+    ax.set_ylabel('SRH recombination rate (m$^{-3}$ s$^{-1}$)')
+
+    ax2 = ax.twinx()
+    ax2.plot(range(301), electric_field(solution)[:, 200]/1e3, label='Field strength', color='k', linestyle='--')
+
+    ax2.set_ylabel('Field strength (MV m$^{-1}$)')
+
+    ax3 = ax.twinx()
+    ax3.spines["right"].set_position(("axes", 1.2))
+    ax3.spines["right"].set_visible(True)
+    ax3.plot(range(301), solution.j, label='Current density', color='k', linestyle=':')
+
+    ax3.set_ylabel('Current density (mA cm$^{-2}$)')
+
+    # Save file:
+    if save is True:
+        if titlemod is False:
+            fig.savefig(f'scan_tracker_bulk_{int(1200/solution.label)}.png', dpi = 400, bbox_inches='tight')
+        else:
+            fig.savefig(f'scan_tracker_bulk_{int(1200/solution.label)}_{titlemod}.png', dpi = 400, bbox_inches='tight')
