@@ -167,11 +167,11 @@ class Solution:
         return cls(data=dat, label=label)
 
     @classmethod
-    def from_single(cls, file_location):
+    def from_single(cls, file_location, key='sol'):
         """
         If creating a Solution object from a single sol output of IonMonger, use this classmethod.
         """
-        data=sio.loadmat(file_name=file_location)['sol']
+        data=sio.loadmat(file_name=file_location)[key]
         print(data.shape)
         return cls(data)
 
