@@ -1,6 +1,10 @@
 import numpy as np
 import scipy.io as sio
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import matplotlib as mpl
+
+mpl.rcParams['animation.ffmpeg_path'] = r'C:\\ffmpeg\\bin\\ffmpeg.exe'
 
 class BatchData:
 
@@ -851,3 +855,306 @@ def plot_scan_tracker_bulk_srh(solution, save=False, titlemod=False):
             fig.savefig(f'scan_tracker_bulk_{int(1200/solution.label)}.png', dpi = 400, bbox_inches='tight')
         else:
             fig.savefig(f'scan_tracker_bulk_{int(1200/solution.label)}_{titlemod}.png', dpi = 400, bbox_inches='tight')
+
+def generation_x(solution, x):
+
+    fph = solution.paramsdic['Fph']
+    alpha = solution.paramsdic['alpha']
+    b = solution.paramsdic['b']
+    inv = solution.paramsdic['inverted']
+
+    if inv == 0:
+        l = 1
+    elif inv == 1:
+        l = -1
+    else:
+        raise Exception('Direction of light not specified correctly')
+
+    genx = fph * alpha * np.exp(-alpha * (b / 2 + l * (x - b / 2)))
+
+    return genx
+
+def generation_array(solution):
+
+    time = len(solution.j)
+    x = solution.vectors['x'][0] * solution.paramsdic['b']
+    gen_array = np.empty((time, len(x)))
+
+    for index, depth in enumerate(x):
+        gen_array[:, index] = generation_x(solution, depth)
+
+    return gen_array
+
+def srh(n, p, gamma, ni2, tor, tor3):
+
+    srh = gamma*(p-ni2/n)/(1+tor*p/n+tor3/n)*(n>=tor*p)*(n>=tor3) \
+        + gamma*(n-ni2/p)/(n/p+tor+tor3/p)*(tor*p>n)*(tor*p>tor3) \
+        + gamma*(p*n-ni2)/(n+tor*p+tor3)*(tor3>n)*(tor3>=tor*p)
+
+    return srh
+
+def interface_recombination(solution):
+
+    # ETL surface recombination parameters
+    ni2 = solution.paramsdic['ni2']
+    kE = solution.paramsdic['kE']
+    gammaE = solution.paramsdic['gammaE']
+    torE = solution.paramsdic['torE']
+    torE3 = solution.paramsdic['torE3']
+    nE = solution.dstrbns['nE'][0][:, -1]
+    p = solution.dstrbns['p'][0][:, 0]
+
+    etl_recombination = srh(nE, p, gammaE, ni2/kE, torE, torE3)
+
+    # HTL surface recombination parameters
+    ni2 = solution.paramsdic['ni2']
+    kH = solution.paramsdic['kH']
+    gammaH = solution.paramsdic['gammaH']
+    torH = solution.paramsdic['torH']
+    torH3 = solution.paramsdic['torH3']
+    n = solution.dstrbns['n'][0][:, -1]
+    pH = solution.dstrbns['pH'][0][:, 0]
+
+    htl_recombination = srh(pH, n, gammaH, ni2/kH, torH, torH3)
+
+    # Rescale to m-2 s-1
+    b = solution.paramsdic['b']
+    G0 = solution.paramsdic['G0']
+
+    # Convert to 3D
+    x = solution.vectors['x'][0]
+    xe = solution.vectors['xE'][0]
+    xh = solution.vectors['xH'][0]
+
+    etl_psk_gap = abs(xe[-1] - x[0])*b
+    htl_psk_gap = abs(xh[0] - x[-1])*b
+
+    return etl_recombination * b * G0 / etl_psk_gap, htl_recombination * b * G0 / htl_psk_gap
+
+def interface_recombination_array(solution):
+
+    # Calculate interface recombination rates
+    etl_recomb, htl_recomb = interface_recombination(solution)
+
+    # Define spatial vectors and time
+    t_ax = len(solution.paramsdic['time'])
+
+    x = len(solution.vectors['x'][0])
+    xe = len(solution.vectors['xE'][0])
+    xh = len(solution.vectors['xH'][0])
+    x_ax = xe + x + xh
+
+    # Create array
+    int_recomb_array = np.zeros((t_ax, x_ax))
+
+    # Insert ETL recombination
+    for time, value in enumerate(etl_recomb):
+        int_recomb_array[time, xe] = value / 2
+        int_recomb_array[time, xe+1] = value / 2
+
+    for time, value in enumerate(htl_recomb):
+        int_recomb_array[time, -xh] = value / 2
+        int_recomb_array[time, -xh-1] = value / 2
+
+    return int_recomb_array
+
+class AnimationData:
+
+    def __init__(self, label, x, t, j, v, phi, n, p, ndefect, pdefect, g, r, sr):
+        self.label = label
+        self.x = x
+        self.t = t
+        self.j = j
+        self.v = v
+        self.n = n
+        self.p = p
+        self.ndefect = ndefect
+        self.pdefect = pdefect
+        self.phi = phi
+        self.g = g
+        self.r = r
+        self.sr = sr
+
+    @classmethod
+    def from_ionmonger(cls, sol):
+
+        t_ax = len(sol.paramsdic['time'])
+        x_ax = len(sol.vectors['x'][0])
+        xe_ax = len(sol.vectors['xE'][0])
+        xh_ax = len(sol.vectors['xH'][0])
+        nm = 1e-9
+
+        return cls(label = sol.label,
+                x = np.concatenate((sol.vectors['xE'][0],
+                                      sol.vectors['x'][0],
+                                      sol.vectors['xH'][0]),
+                                     axis=0) * sol.paramsdic['b'] / nm,
+                t = sol.paramsdic['time'] * sol.paramsdic['Tion'],
+                j = sol.j,
+                v = sol.v,
+                n = np.concatenate((sol.dstrbns['nE'][0],
+                                    sol.dstrbns['n'][0],
+                                    np.zeros((t_ax,
+                                             xh_ax))),
+                                  axis=1) * sol.dE,
+                p = np.concatenate((np.zeros((t_ax,
+                                             xe_ax)),
+                                    sol.dstrbns['p'][0],
+                                    sol.dstrbns['pH'][0]),
+                                  axis=1) * sol.dH,
+                ndefect = np.concatenate((np.zeros((t_ax,
+                                             xe_ax)),
+                                          np.full((t_ax, x_ax),
+                                                 sol.n0),
+                                          np.zeros((t_ax,
+                                             xh_ax))),
+                                        axis=1),
+                pdefect = np.concatenate((np.zeros((t_ax,
+                                             xe_ax)),
+                                      sol.dstrbns['P'][0],
+                                      np.zeros((t_ax,
+                                             xh_ax))),
+                                    axis=1) * sol.n0,
+                phi = np.concatenate((sol.dstrbns['phiE'][0],
+                                      sol.dstrbns['phi'][0],
+                                      sol.dstrbns['phiH'][0]),
+                                     axis=1) * sol.vt,
+                g = np.concatenate((np.zeros((t_ax,
+                                             xe_ax)),
+                                    generation_array(sol),
+                                    np.zeros((t_ax,
+                                             xh_ax))),
+                                    axis=1),
+                r = np.concatenate((np.zeros((t_ax,
+                                             xe_ax)),
+                                    stim.srh_recombination_rate(sol),
+                                    np.zeros((t_ax,
+                                             xh_ax))),
+                                    axis=1),
+                sr = interface_recombination_array(sol)
+               )
+
+def init_ani(data, ini):
+
+    # Create figure
+    fig, ((jv_ax, np_ax), (phi_ax, gr_ax)) = plt.subplots(
+        nrows=2, ncols=2, figsize= (10, 10))
+
+    max_scale = 1.1
+    min_scale = 0.9
+
+    # JV-time plot
+    t_plot = jv_ax.axvline(data.t[ini], c='k')
+    v_plot, = jv_ax.plot(data.t[ini], data.v[ini], label='Voltage', c='tab:blue')
+    jv_ax2 = jv_ax.twinx()
+    j_plot, = jv_ax2.plot(data.t[ini], data.j[ini], c='tab:orange')
+
+    jv_ax.set_xlim(data.t[ini], data.t[-1])
+    jv_ax.set_xlabel('Time (s)')
+
+    jv_ax.set_ylim(min(data.v)*min_scale, max(data.v)*max_scale)
+    jv_ax.set_ylabel('Applied voltage (V)')
+
+    jv_ax2.set_ylim(0, max(data.j[1:])*max_scale)
+    jv_ax2.set_ylabel('Current Density (mA cm$^{-2})$')
+
+    jv_ax.plot(0, 0, label='Current density', c='tab:orange')
+    jv_ax.legend(bbox_to_anchor=(0, 1, 1, 0), loc="lower left", mode="expand")
+
+    # Densities plot
+    n_plot, = np_ax.plot(data.x, data.n[ini, :], label='n', c='tab:blue')
+    p_plot, = np_ax.plot(data.x, data.p[ini, :], label='p', c='tab:red')
+    ndefect_plot, = np_ax.plot(data.x, data.ndefect[ini, :], label='ndefect', c='tab:orange')
+    pdefect_plot, = np_ax.plot(data.x, data.pdefect[ini, :], label='pdefect', c='tab:green')
+
+    np_ax.set_xlim(data.x[0], data.x[-1])
+    np_ax.set_xlabel('Depth (nm)')
+
+    dens_array = np.concatenate((data.n, data.p, data.ndefect, data.pdefect))
+    np_ax_max = np.amax(dens_array)
+    np_ax_min = np.amin(np.where(dens_array > 0, dens_array, float('inf')))
+
+    np_ax.set_ylim(np_ax_min*min_scale, np_ax_max*max_scale)
+    np_ax.set_yscale('log')
+    np_ax.set_ylabel('Number density (m$^{-3}$)')
+
+    np_ax.legend(bbox_to_anchor=(0, 1, 1, 0), loc="lower left", mode="expand", ncol=2)
+
+    # Electric potential plot
+    phi_plot, = phi_ax.plot(data.x, data.phi[ini, :], c='tab:purple')
+
+    phi_ax.set_xlim(data.x[0], data.x[-1])
+    phi_ax.set_xlabel('Depth (nm)')
+
+    phi_ax.set_ylim(np.amin(data.phi)*max_scale, np.amax(data.phi)*max_scale)
+    phi_ax.set_ylabel('Electric potential (V)')
+
+    # Generation-recombination plot
+    g_plot, = gr_ax.plot(data.x, data.g[ini, :], label='Generation')
+    r_plot, = gr_ax.plot(data.x, data.r[ini, :], label='SRH recombination')
+    sr_plot, = gr_ax.plot(data.x, data.sr[ini, :], label='Interface Recombination')
+
+    gr_ax.set_xlim(data.x[0], data.x[-1])
+    gr_ax.set_xlabel('Depth (nm)')
+
+    rate_array = np.concatenate((data.g, data.r, data.sr))
+    gr_ax_max = np.amax(rate_array)
+    gr_ax_min = np.amin(np.where(rate_array > 0, rate_array, float('inf')))
+
+    gr_ax.set_ylim(gr_ax_min*min_scale, gr_ax_max*max_scale)
+    gr_ax.set_yscale('log')
+    gr_ax.set_ylabel('Rate (m$^{-3}$s$^{-1}$)')
+
+    gr_ax.legend(bbox_to_anchor=(0, -0.32, 1, 0), loc="lower left", mode="expand")
+
+    # Make plot pretty
+    fig.tight_layout()
+
+    return fig, ini, t_plot, v_plot, j_plot, n_plot, p_plot, phi_plot,\
+        ndefect_plot, pdefect_plot, g_plot, r_plot, sr_plot
+
+def update_ani(num, ini, t_plot, v_plot, j_plot, n_plot, p_plot, phi_plot,
+               ndefect_plot, pdefect_plot, g_plot, r_plot, sr_plot, data):
+
+    t_plot.set_xdata(data.t[num+ini])
+    v_plot.set_data(data.t[:num+ini], data.v[:num+ini])
+    j_plot.set_data(data.t[:num+ini], data.j[:num+ini])
+    n_plot.set_ydata(data.n[num+ini, :])
+    p_plot.set_ydata(data.p[num+ini, :])
+    phi_plot.set_ydata(data.phi[num+ini, :])
+    ndefect_plot.set_ydata(data.ndefect[num+ini, :])
+    pdefect_plot.set_ydata(data.pdefect[num+ini, :])
+    g_plot.set_ydata(data.g[num+ini, :])
+    r_plot.set_ydata(data.r[num+ini, :])
+    sr_plot.set_ydata(data.sr[num+ini, :])
+
+    return ini, t_plot, v_plot, j_plot, n_plot, p_plot, phi_plot, ndefect_plot, pdefect_plot, g_plot, r_plot, sr_plot
+
+def animate_solution(file, output, ini, length):
+    sol = stim.Solution.from_single(file, key='sol')
+    data = AnimationData.from_ionmonger(sol)
+
+    init_fig, ini_ini, t_plot, init_v_plot, init_j_plot, init_n_plot, init_p_plot, phi_plot,\
+        init_ndefect_plot, init_pdefect_plot, init_g_plot, init_r_plot, init_sr_plot = init_ani(data, ini(data))
+
+    ani = animation.FuncAnimation(init_fig,
+                                  update_ani,
+                                  fargs=(ini_ini,
+                                         t_plot,
+                                         init_v_plot,
+                                         init_j_plot,
+                                         init_n_plot,
+                                         init_p_plot,
+                                         phi_plot,
+                                         init_ndefect_plot,
+                                         init_pdefect_plot,
+                                         init_g_plot,
+                                         init_r_plot,
+                                         init_sr_plot,
+                                         data
+                                        ),
+                                  frames=length(data),
+                                  interval=100
+                                 )
+
+    ani.save(f'{output}.mp4', dpi=500)
