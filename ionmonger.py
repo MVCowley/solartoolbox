@@ -20,9 +20,9 @@ class BatchData:
 
 class Solution:
 
-    SPLIT_JV = 100
+    split_jv = 101
 
-    def __init__(self, data, label=None):
+    def __init__(self, data, label=None, w2im=False, split_jv=100):
 
         """
         A class object which holds formatted data from IonMonger solution files. Designed to be called from
@@ -35,7 +35,7 @@ class Solution:
 
         Attributes:
 
-            SPLIT_JV: number of temporal grid points in each stage of the simulation voltage program
+            split_jv: number of temporal grid points in each stage of the simulation voltage program
             raw: data in scipy.io.loadmat imported format
             label: variable from batch run
             dat: solution file
@@ -77,8 +77,13 @@ class Solution:
 
         # Simulation info
         self.widthP = self.params['b'][0][0][0]*1e9
-        self.stages = int((len(self.params['applied_voltage'][0][0])-1)/3)
-        self.stage = [i*self.SPLIT_JV for i in range(self.stages+1)]
+        if w2im is True:
+            self.stages = int(self.params['stage_bounds'][0][-1, 1][0][1]/100)
+            self.old_params = self.dat['old_format_sol'][0][0]['params'][0][0]
+            self.label = self.old_params['V_preD'][0][0][0][0]/self.old_params['sweep_rateD'][0][0][0][0]
+        else:
+            self.stages = int((len(self.params['applied_voltage'][0][0])-1)/3)
+        self.stage = [i*self.split_jv for i in range(self.stages+1)]
         self.paramsdic = {l:v.flatten() for l, v in zip(self.params[0].dtype.names, self.params[0])}
         self.n0 = self.paramsdic['N0'][0]
         self.dE = self.paramsdic['dE'][0]
@@ -154,7 +159,7 @@ class Solution:
         self.degreehyst = ((self.revarea - self.fwdarea) / self.revarea) * 100
 
     @classmethod
-    def from_batch(cls, batch_data, sol_number):
+    def from_batch(cls, batch_data, sol_number, w2im=False, split_jv=100):
         """
         If creating Solution objects from the batch script in the readme of solartoolbox, use this
         classmethod.
@@ -168,7 +173,7 @@ class Solution:
         """
         label = batch_data.raw[sol_number, 0][0][0]
         dat = batch_data.raw[sol_number, 1]
-        return cls(data=dat, label=label)
+        return cls(data=dat, label=label, w2im=w2im)
 
     @classmethod
     def from_single(cls, file_location, key='sol', within_struct=False):
