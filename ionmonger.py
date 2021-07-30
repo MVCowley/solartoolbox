@@ -1135,7 +1135,35 @@ def update_ani(num, ini, t_plot, v_plot, j_plot, n_plot, p_plot, phi_plot,
 
     return ini, t_plot, v_plot, j_plot, n_plot, p_plot, phi_plot, ndefect_plot, pdefect_plot, g_plot, r_plot, sr_plot
 
-def animate_solution(file, output, ini, length):
+def animate_solution(solution, output, ini, length):
+    data = AnimationData.from_ionmonger(solution)
+
+    init_fig, ini_ini, t_plot, init_v_plot, init_j_plot, init_n_plot, init_p_plot, phi_plot,\
+        init_ndefect_plot, init_pdefect_plot, init_g_plot, init_r_plot, init_sr_plot = init_ani(data, ini(data))
+
+    ani = animation.FuncAnimation(init_fig,
+                                  update_ani,
+                                  fargs=(ini_ini,
+                                         t_plot,
+                                         init_v_plot,
+                                         init_j_plot,
+                                         init_n_plot,
+                                         init_p_plot,
+                                         phi_plot,
+                                         init_ndefect_plot,
+                                         init_pdefect_plot,
+                                         init_g_plot,
+                                         init_r_plot,
+                                         init_sr_plot,
+                                         data
+                                        ),
+                                  frames=length(data),
+                                  interval=100
+                                 )
+
+    ani.save(f'{output}.mp4', dpi=500)
+
+def load_animate_solution(file, output, ini, length):
     sol = stim.Solution.from_single(file, key='sol')
     data = AnimationData.from_ionmonger(sol)
 
