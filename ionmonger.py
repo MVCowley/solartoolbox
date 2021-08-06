@@ -1032,7 +1032,7 @@ class AnimationData:
                                     axis=1),
                 r = np.concatenate((np.zeros((t_ax,
                                              xe_ax)),
-                                    stim.srh_recombination_rate(sol),
+                                    srh_recombination_rate(sol),
                                     np.zeros((t_ax,
                                              xh_ax))),
                                     axis=1),
